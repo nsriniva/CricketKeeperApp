@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Home, Zap, Users, Clock, UsersIcon, Settings } from "lucide-react";
+import SettingsDialog from "./settings-dialog";
 
 interface NavigationProps {
   currentTab: string;
@@ -26,9 +27,9 @@ export default function Navigation({ currentTab, onTabChange }: NavigationProps)
             </div>
             <h1 className="text-lg font-semibold">CricketPro</h1>
           </div>
-          <button className="w-8 h-8 flex items-center justify-center touch-feedback">
-            <Settings className="w-5 h-5" />
-          </button>
+          <div className="flex items-center space-x-2">
+            <SettingsDialog />
+          </div>
         </div>
       </header>
 
