@@ -115,7 +115,7 @@ export class MemStorage implements IStorage {
       const team = this.teams.get(player.teamId);
       if (team) {
         const updatedPlayers = [...(team.players || []), id];
-        await this.updateTeam(player.teamId, { players: updatedPlayers });
+        this.teams.set(player.teamId, { ...team, players: updatedPlayers });
       }
     }
 

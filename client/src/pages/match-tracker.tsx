@@ -44,9 +44,14 @@ export default function MatchTracker() {
   const form = useForm<MatchFormData>({
     resolver: zodResolver(matchFormSchema),
     defaultValues: {
+      team1Id: "",
+      team2Id: "",
       format: "T20",
+      venue: "",
+      tossWinner: "",
       tossDecision: "bat",
     },
+    mode: "onChange",
   });
 
   const createMatchMutation = useMutation({

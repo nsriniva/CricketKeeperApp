@@ -81,42 +81,55 @@ export class DataExportManager {
       // Clear existing data first (optional - could be made configurable)
       await this.clearAllData();
 
-      // Import teams first
+      // Create mapping from old team IDs to new team IDs
+      const teamIdMapping = new Map<string, string>();
+
+      // Import teams first and track ID mapping
       for (const team of data.teams) {
         try {
-          const { id, createdAt, ...teamData } = team;
-          await fetch('/api/teams', {
+          const { id: oldId, createdAt, ...teamData } = team;
+          const response = await fetch('/api/teams', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(teamData)
           });
+          
+          if (response.ok) {
+            const newTeam = await response.json();
+            teamIdMapping.set(oldId, newTeam.id);
+          }
         } catch (error) {
           errors.push(`Failed to import team: ${team.name}`);
         }
       }
 
-      // Import players
+      // Import players with updated team IDs
       for (const player of data.players) {
         try {
-          const { id, createdAt, ...playerData } = player;
+          const { id, createdAt, teamId: oldTeamId, ...playerData } = player;
+          const newTeamId = teamIdMapping.get(oldTeamId) || oldTeamId;
+          
           await fetch('/api/players', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(playerData)
+            body: JSON.stringify({ ...playerData, teamId: newTeamId })
           });
         } catch (error) {
           errors.push(`Failed to import player: ${player.name}`);
         }
       }
 
-      // Import matches
+      // Import matches with updated team IDs
       for (const match of data.matches) {
         try {
-          const { id, createdAt, ...matchData } = match;
+          const { id, createdAt, team1Id: oldTeam1Id, team2Id: oldTeam2Id, ...matchData } = match;
+          const newTeam1Id = teamIdMapping.get(oldTeam1Id) || oldTeam1Id;
+          const newTeam2Id = teamIdMapping.get(oldTeam2Id) || oldTeam2Id;
+          
           await fetch('/api/matches', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(matchData)
+            body: JSON.stringify({ ...matchData, team1Id: newTeam1Id, team2Id: newTeam2Id })
           });
         } catch (error) {
           errors.push(`Failed to import match between ${match.team1Name} and ${match.team2Name}`);
