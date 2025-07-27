@@ -59,12 +59,13 @@ export default function MatchTracker() {
   });
 
   const startMatchMutation = useMutation({
-    mutationFn: async (matchId: string) => {
+    mutationFn: async (data: { matchId: string; match: Match }) => {
+      const { matchId, match } = data;
       const updates = { 
         status: "in_progress" as const,
         currentInnings: 1,
-        battingTeam: form.getValues('tossDecision') === 'bat' ? form.getValues('team1Id') : form.getValues('team2Id'),
-        bowlingTeam: form.getValues('tossDecision') === 'bat' ? form.getValues('team2Id') : form.getValues('team1Id')
+        battingTeam: match.tossDecision === 'bat' ? match.team1Id : match.team2Id,
+        bowlingTeam: match.tossDecision === 'bat' ? match.team2Id : match.team1Id
       };
       const response = await apiRequest("PATCH", `/api/matches/${matchId}`, updates);
       return response.json();
@@ -75,10 +76,14 @@ export default function MatchTracker() {
   });
 
   const onSubmit = (data: MatchFormData) => {
+    console.log("Form submitted:", data);
     const team1 = teams.find(t => t.id === data.team1Id);
     const team2 = teams.find(t => t.id === data.team2Id);
     
-    if (!team1 || !team2) return;
+    if (!team1 || !team2) {
+      console.log("Teams not found:", { team1, team2 });
+      return;
+    }
 
     const matchData: InsertMatch = {
       team1Id: data.team1Id,
@@ -92,6 +97,7 @@ export default function MatchTracker() {
       status: "not_started",
     };
 
+    console.log("Creating match:", matchData);
     createMatchMutation.mutate(matchData);
   };
 
@@ -177,7 +183,7 @@ export default function MatchTracker() {
               <Button
                 size="sm"
                 className="cricket-green-600 hover:bg-cricket-green-700 touch-feedback"
-                onClick={() => startMatchMutation.mutate(match.id)}
+                onClick={() => startMatchMutation.mutate({ matchId: match.id, match })}
                 disabled={startMatchMutation.isPending}
               >
                 <Play className="w-3 h-3 mr-1" />
@@ -214,7 +220,13 @@ export default function MatchTracker() {
         <h1 className="text-2xl font-bold text-gray-900">Match Tracker</h1>
         <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
           <DialogTrigger asChild>
-            <Button className="cricket-green-600 hover:bg-cricket-green-700 touch-feedback">
+            <Button 
+              className="cricket-green-600 hover:bg-cricket-green-700 touch-feedback"
+              onClick={() => {
+                console.log("Create Match button clicked");
+                setIsCreateOpen(true);
+              }}
+            >
               <Plus className="w-4 h-4 mr-1" />
               New Match
             </Button>
