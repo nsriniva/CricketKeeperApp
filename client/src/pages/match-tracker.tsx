@@ -388,11 +388,12 @@ export default function MatchTracker() {
                   <Button 
                     type="submit" 
                     className="flex-1 cricket-green-600 hover:bg-cricket-green-700 touch-feedback"
-                    disabled={createMatchMutation.isPending}
+                    disabled={createMatchMutation.isPending || !form.formState.isValid}
                     onClick={(e) => {
                       console.log("Create Match button clicked");
                       console.log("Form values:", form.getValues());
                       console.log("Form errors:", form.formState.errors);
+                      console.log("Form is valid:", form.formState.isValid);
                     }}
                   >
                     {createMatchMutation.isPending ? "Creating..." : "Create Match"}
