@@ -80,11 +80,18 @@ export default function MatchTracker() {
 
   const onSubmit = (data: MatchFormData) => {
     console.log("Form submitted:", data);
+    console.log("Form is valid:", form.formState.isValid);
+    
     const team1 = teams.find(t => t.id === data.team1Id);
     const team2 = teams.find(t => t.id === data.team2Id);
     
     if (!team1 || !team2) {
-      console.log("Teams not found:", { team1, team2 });
+      console.log("Teams not found:", { team1, team2, teams });
+      return;
+    }
+
+    if (data.team1Id === data.team2Id) {
+      console.log("Same team selected for both teams");
       return;
     }
 
@@ -94,10 +101,9 @@ export default function MatchTracker() {
       team1Name: team1.name,
       team2Name: team2.name,
       format: data.format,
-      venue: data.venue,
-      tossWinner: data.tossWinner,
-      tossDecision: data.tossDecision,
-      status: "not_started",
+      venue: data.venue || undefined,
+      tossWinner: data.tossWinner || undefined,
+      tossDecision: data.tossDecision || undefined,
     };
 
     console.log("Creating match:", matchData);

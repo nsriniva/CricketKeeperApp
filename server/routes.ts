@@ -8,7 +8,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/teams", async (req, res) => {
     try {
       const teams = await storage.getTeams();
-      res.json(teams);
+      // Update each team with actual player count
+      const teamsWithPlayerCount = await Promise.all(
+        teams.map(async (team) => {
+          const players = await storage.getPlayersByTeam(team.id);
+          return {
+            ...team,
+            players: players.map(p => p.id),
+            playerCount: players.length
+          };
+        })
+      );
+      res.json(teamsWithPlayerCount);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch teams" });
     }

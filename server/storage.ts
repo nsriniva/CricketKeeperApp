@@ -105,9 +105,20 @@ export class MemStorage implements IStorage {
       ballsBowled: 0,
       runsConceded: 0,
       maidens: 0,
-      bestBowling: "0/0"
+      bestBowling: "0/0",
+      teamId: insertPlayer.teamId || null
     };
     this.players.set(id, player);
+
+    // Update the team's players array
+    if (player.teamId) {
+      const team = this.teams.get(player.teamId);
+      if (team) {
+        const updatedPlayers = [...(team.players || []), id];
+        await this.updateTeam(player.teamId, { players: updatedPlayers });
+      }
+    }
+
     return player;
   }
 
@@ -157,7 +168,18 @@ export class MemStorage implements IStorage {
       team2Overs: 0,
       currentInnings: 1,
       ballByBall: [],
-      playerStats: {}
+      playerStats: {},
+      venue: insertMatch.venue || null,
+      tossWinner: insertMatch.tossWinner || null,
+      tossDecision: insertMatch.tossDecision || null,
+      winner: null,
+      result: null,
+      battingTeam: null,
+      bowlingTeam: null,
+      currentBatsman1: null,
+      currentBatsman2: null,
+      currentBowler: null,
+      onStrike: null
     };
     this.matches.set(id, match);
     return match;
