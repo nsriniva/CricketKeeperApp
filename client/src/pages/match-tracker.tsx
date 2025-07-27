@@ -389,6 +389,54 @@ export default function MatchTracker() {
                   />
                 </div>
 
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="tossWinner"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Toss Winner (Optional)</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select team" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {teams.map((team) => (
+                              <SelectItem key={team.id} value={team.id}>
+                                {team.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="tossDecision"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Toss Decision</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="bat">Bat First</SelectItem>
+                            <SelectItem value="bowl">Bowl First</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
                 <div className="flex gap-2 pt-4">
                   <Button 
                     type="submit" 
