@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Home, Zap, Users, Clock, UsersIcon, Settings } from "lucide-react";
+import { Home, Zap, Users, Clock, UsersIcon, Settings, Target } from "lucide-react";
 import SettingsDialog from "./settings-dialog";
 
 interface NavigationProps {
@@ -11,8 +11,8 @@ export default function Navigation({ currentTab, onTabChange }: NavigationProps)
   const tabs = [
     { id: "dashboard", label: "Home", icon: Home },
     { id: "live-scoring", label: "Live", icon: Zap },
+    { id: "match-tracker", label: "Matches", icon: Target },
     { id: "player-stats", label: "Players", icon: Users },
-    { id: "match-history", label: "History", icon: Clock },
     { id: "team-management", label: "Teams", icon: UsersIcon },
   ];
 

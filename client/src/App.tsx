@@ -9,6 +9,7 @@ import LiveScoring from "@/pages/live-scoring";
 import PlayerStats from "@/pages/player-stats";
 import MatchHistory from "@/pages/match-history";
 import TeamManagement from "@/pages/team-management";
+import MatchTracker from "@/pages/match-tracker";
 import { useLocalStorage } from "@/hooks/use-local-storage";
 
 function App() {
@@ -30,6 +31,8 @@ function App() {
         return <MatchHistory />;
       case "team-management":
         return <TeamManagement />;
+      case "match-tracker":
+        return <MatchTracker />;
       default:
         return <Dashboard onNavigate={handleTabChange} />;
     }
