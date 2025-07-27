@@ -21,7 +21,7 @@ const matchFormSchema = z.object({
   format: z.enum(["T20", "ODI", "Test"]),
   venue: z.string().optional(),
   tossWinner: z.string().optional(),
-  tossDecision: z.enum(["bat", "bowl"]).optional(),
+  tossDecision: z.enum(["bat", "bowl"]),
 }).refine(data => data.team1Id !== data.team2Id, {
   message: "Teams must be different",
   path: ["team2Id"],
@@ -393,12 +393,15 @@ export default function MatchTracker() {
                   <Button 
                     type="submit" 
                     className="flex-1 cricket-green-600 hover:bg-cricket-green-700 touch-feedback"
-                    disabled={createMatchMutation.isPending || !form.formState.isValid}
+                    disabled={createMatchMutation.isPending}
                     onClick={(e) => {
                       console.log("Create Match button clicked");
                       console.log("Form values:", form.getValues());
                       console.log("Form errors:", form.formState.errors);
                       console.log("Form is valid:", form.formState.isValid);
+                      console.log("Form dirty fields:", form.formState.dirtyFields);
+                      
+                      // Don't prevent default - let the form handle submission
                     }}
                   >
                     {createMatchMutation.isPending ? "Creating..." : "Create Match"}
