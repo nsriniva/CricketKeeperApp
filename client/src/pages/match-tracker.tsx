@@ -84,19 +84,27 @@ export default function MatchTracker() {
   });
 
   const onSubmit = (data: MatchFormData) => {
-    console.log("Form submitted:", data);
+    console.log("=== FORM SUBMISSION STARTED ===");
+    console.log("Form submitted with data:", data);
     console.log("Form is valid:", form.formState.isValid);
+    console.log("Available teams:", teams);
     
     const team1 = teams.find(t => t.id === data.team1Id);
     const team2 = teams.find(t => t.id === data.team2Id);
     
+    console.log("Found teams:", { team1, team2 });
+    
     if (!team1 || !team2) {
-      console.log("Teams not found:", { team1, team2, teams });
+      console.error("ERROR: Teams not found!", { 
+        team1Id: data.team1Id, 
+        team2Id: data.team2Id, 
+        availableTeams: teams.map(t => ({ id: t.id, name: t.name }))
+      });
       return;
     }
 
     if (data.team1Id === data.team2Id) {
-      console.log("Same team selected for both teams");
+      console.error("ERROR: Same team selected for both teams");
       return;
     }
 
@@ -111,7 +119,8 @@ export default function MatchTracker() {
       tossDecision: data.tossDecision || undefined,
     };
 
-    console.log("Creating match:", matchData);
+    console.log("Creating match with data:", matchData);
+    console.log("=== CALLING MUTATION ===");
     createMatchMutation.mutate(matchData);
   };
 
@@ -394,15 +403,26 @@ export default function MatchTracker() {
                     type="submit" 
                     className="flex-1 cricket-green-600 hover:bg-cricket-green-700 touch-feedback"
                     disabled={createMatchMutation.isPending}
-                    onClick={(e) => {
-                      console.log("Create Match button clicked");
+                    onClick={async (e) => {
+                      console.log("=== CREATE MATCH BUTTON CLICKED ===");
                       console.log("Form values:", form.getValues());
                       console.log("Form errors:", form.formState.errors);
                       console.log("Form is valid:", form.formState.isValid);
                       console.log("Has teams?", teams.length > 0);
+                      console.log("Available teams:", teams.map(t => ({ id: t.id, name: t.name })));
                       
-                      // Trigger form validation
-                      form.trigger();
+                      // Trigger form validation manually
+                      const isValid = await form.trigger();
+                      console.log("Manual validation result:", isValid);
+                      
+                      if (!isValid) {
+                        console.error("Form validation failed");
+                        console.log("Current errors:", form.formState.errors);
+                        e.preventDefault();
+                        return;
+                      }
+                      
+                      console.log("Form is valid, proceeding with submission");
                     }}
                   >
                     {createMatchMutation.isPending ? "Creating..." : "Create Match"}
