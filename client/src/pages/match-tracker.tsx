@@ -21,7 +21,7 @@ const matchFormSchema = z.object({
   format: z.enum(["T20", "ODI", "Test"]),
   venue: z.string().optional(),
   tossWinner: z.string().optional(),
-  tossDecision: z.enum(["bat", "bowl"]),
+  tossDecision: z.enum(["bat", "bowl"]).optional(),
 }).refine(data => data.team1Id !== data.team2Id, {
   message: "Teams must be different",
   path: ["team2Id"],
@@ -389,54 +389,6 @@ export default function MatchTracker() {
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="tossWinner"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Toss Winner (Optional)</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select team" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {teams.map((team) => (
-                              <SelectItem key={team.id} value={team.id}>
-                                {team.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="tossDecision"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Toss Decision</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="bat">Bat First</SelectItem>
-                            <SelectItem value="bowl">Bowl First</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
                 <div className="flex gap-2 pt-4">
                   <Button 
                     type="submit" 
@@ -447,9 +399,10 @@ export default function MatchTracker() {
                       console.log("Form values:", form.getValues());
                       console.log("Form errors:", form.formState.errors);
                       console.log("Form is valid:", form.formState.isValid);
-                      console.log("Form dirty fields:", form.formState.dirtyFields);
+                      console.log("Has teams?", teams.length > 0);
                       
-                      // Don't prevent default - let the form handle submission
+                      // Trigger form validation
+                      form.trigger();
                     }}
                   >
                     {createMatchMutation.isPending ? "Creating..." : "Create Match"}
