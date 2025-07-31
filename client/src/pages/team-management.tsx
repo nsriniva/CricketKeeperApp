@@ -27,7 +27,7 @@ const playerFormSchema = insertPlayerSchema.extend({
   teamId: z.string().optional(),
 });
 
-const matchFormSchema = insertMatchSchema.extend({
+const matchFormSchema = z.object({
   team1Id: z.string().min(1, "Team 1 is required"),
   team2Id: z.string().min(1, "Team 2 is required"),
   format: z.string().min(1, "Format is required"),
@@ -136,15 +136,18 @@ export default function TeamManagement() {
   });
 
   const createMatchMutation = useMutation({
-    mutationFn: async (data: InsertMatch) => {
+    mutationFn: async (data: z.infer<typeof matchFormSchema>) => {
       console.log("=== MUTATION STARTING ===", data);
       const team1 = teams.find(t => t.id === data.team1Id);
       const team2 = teams.find(t => t.id === data.team2Id);
       
-      const matchData = {
-        ...data,
+      const matchData: InsertMatch = {
+        team1Id: data.team1Id,
+        team2Id: data.team2Id,
         team1Name: team1?.name || "",
         team2Name: team2?.name || "",
+        format: data.format,
+        venue: data.venue || "",
         status: "not_started",
       };
       
