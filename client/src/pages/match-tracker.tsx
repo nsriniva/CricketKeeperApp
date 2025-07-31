@@ -260,7 +260,8 @@ export default function MatchTracker() {
             </DialogHeader>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit, (errors) => {
-                console.log("Form validation errors:", errors);
+                console.error("=== FORM VALIDATION FAILED ===");
+                console.error("Form validation errors:", errors);
               })} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <FormField
@@ -403,27 +404,6 @@ export default function MatchTracker() {
                     type="submit" 
                     className="flex-1 cricket-green-600 hover:bg-cricket-green-700 touch-feedback"
                     disabled={createMatchMutation.isPending}
-                    onClick={async (e) => {
-                      console.log("=== CREATE MATCH BUTTON CLICKED ===");
-                      console.log("Form values:", form.getValues());
-                      console.log("Form errors:", form.formState.errors);
-                      console.log("Form is valid:", form.formState.isValid);
-                      console.log("Has teams?", teams.length > 0);
-                      console.log("Available teams:", teams.map(t => ({ id: t.id, name: t.name })));
-                      
-                      // Trigger form validation manually
-                      const isValid = await form.trigger();
-                      console.log("Manual validation result:", isValid);
-                      
-                      if (!isValid) {
-                        console.error("Form validation failed");
-                        console.log("Current errors:", form.formState.errors);
-                        e.preventDefault();
-                        return;
-                      }
-                      
-                      console.log("Form is valid, proceeding with submission");
-                    }}
                   >
                     {createMatchMutation.isPending ? "Creating..." : "Create Match"}
                   </Button>
