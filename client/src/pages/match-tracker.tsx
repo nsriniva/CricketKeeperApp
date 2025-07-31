@@ -32,6 +32,9 @@ type MatchFormData = z.infer<typeof matchFormSchema>;
 export default function MatchTracker() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [selectedTab, setSelectedTab] = useState("upcoming");
+  
+  // Debug logging
+  console.log("=== MATCH TRACKER COMPONENT LOADED ===");
 
   const { data: matches = [] } = useQuery<Match[]>({
     queryKey: ["/api/matches"],
@@ -56,14 +59,19 @@ export default function MatchTracker() {
 
   const createMatchMutation = useMutation({
     mutationFn: async (data: InsertMatch) => {
+      console.log("=== MUTATION EXECUTING ===", data);
       const response = await apiRequest("POST", "/api/matches", data);
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
+      console.log("=== MATCH CREATED SUCCESSFULLY ===", result);
       queryClient.invalidateQueries({ queryKey: ["/api/matches"] });
       setIsCreateOpen(false);
       form.reset();
     },
+    onError: (error) => {
+      console.error("=== MATCH CREATION FAILED ===", error);
+    }
   });
 
   const startMatchMutation = useMutation({
@@ -240,7 +248,15 @@ export default function MatchTracker() {
     <div className="p-4 space-y-4 pb-20">
       {/* Header */}
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-900">Match Tracker</h1>
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Match Tracker</h1>
+          <button 
+            onClick={() => console.log("=== TEST BUTTON WORKS ===", new Date())}
+            className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded"
+          >
+            Test Click (Debug)
+          </button>
+        </div>
         <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
           <DialogTrigger asChild>
             <Button 
