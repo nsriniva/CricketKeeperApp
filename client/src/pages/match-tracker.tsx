@@ -246,7 +246,8 @@ export default function MatchTracker() {
             <Button 
               className="cricket-green-600 hover:bg-cricket-green-700 touch-feedback"
               onClick={() => {
-                console.log("Create Match button clicked");
+                console.log("=== NEW MATCH DIALOG OPENING ===");
+                console.log("Available teams:", teams.length);
                 setIsCreateOpen(true);
               }}
             >
@@ -404,6 +405,7 @@ export default function MatchTracker() {
                     type="submit" 
                     className="flex-1 cricket-green-600 hover:bg-cricket-green-700 touch-feedback"
                     disabled={createMatchMutation.isPending}
+                    onClick={() => console.log("=== SUBMIT BUTTON CLICKED ===")}
                   >
                     {createMatchMutation.isPending ? "Creating..." : "Create Match"}
                   </Button>
