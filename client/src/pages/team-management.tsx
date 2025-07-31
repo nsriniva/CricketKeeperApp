@@ -38,6 +38,9 @@ export default function TeamManagement() {
   const [showTeamDialog, setShowTeamDialog] = useState(false);
   const [showPlayerDialog, setShowPlayerDialog] = useState(false);
   const [showMatchDialog, setShowMatchDialog] = useState(false);
+  
+  // Debug logging
+  console.log("=== TEAM MANAGEMENT COMPONENT LOADED ===");
   const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
   const { toast } = useToast();
 
@@ -168,7 +171,9 @@ export default function TeamManagement() {
   };
 
   const onCreateMatch = (data: z.infer<typeof matchFormSchema>) => {
+    console.log("=== FORM SUBMITTED ===", data);
     if (data.team1Id === data.team2Id) {
+      console.log("=== SAME TEAM SELECTED ERROR ===");
       toast({
         title: "Error",
         description: "Please select different teams",
@@ -176,6 +181,7 @@ export default function TeamManagement() {
       });
       return;
     }
+    console.log("=== CALLING MUTATION ===");
     createMatchMutation.mutate(data);
   };
 
@@ -265,7 +271,16 @@ export default function TeamManagement() {
 
           <Dialog open={showMatchDialog} onOpenChange={setShowMatchDialog}>
             <DialogTrigger asChild>
-              <Button size="sm" className="cricket-green-600 hover:bg-cricket-green-700 touch-feedback">
+              <Button 
+                size="sm" 
+                className="cricket-green-600 hover:bg-cricket-green-700 touch-feedback"
+                onClick={() => {
+                  console.log("=== MATCH BUTTON CLICKED IN TEAM MANAGEMENT ===");
+                  console.log("Available teams:", teams.length);
+                  console.log("Teams data:", teams);
+                  setShowMatchDialog(true);
+                }}
+              >
                 <Plus className="w-4 h-4 mr-1" />
                 Match
               </Button>
