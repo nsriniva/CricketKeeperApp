@@ -52,7 +52,7 @@ export default function TeamManagement() {
     queryKey: ["/api/players"],
   });
 
-  const { data: matches = [] } = useQuery({
+  const { data: matches = [] } = useQuery<Match[]>({
     queryKey: ["/api/matches"],
   });
 
@@ -131,6 +131,7 @@ export default function TeamManagement() {
 
   const createMatchMutation = useMutation({
     mutationFn: async (data: InsertMatch) => {
+      console.log("=== MUTATION STARTING ===", data);
       const team1 = teams.find(t => t.id === data.team1Id);
       const team2 = teams.find(t => t.id === data.team2Id);
       
@@ -141,10 +142,12 @@ export default function TeamManagement() {
         status: "not_started",
       };
       
+      console.log("=== SENDING MATCH DATA ===", matchData);
       const response = await apiRequest("POST", "/api/matches", matchData);
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
+      console.log("=== MATCH CREATED SUCCESS ===", result);
       queryClient.invalidateQueries({ queryKey: ["/api/matches"] });
       setShowMatchDialog(false);
       matchForm.reset();
@@ -153,7 +156,8 @@ export default function TeamManagement() {
         description: "Match created successfully",
       });
     },
-    onError: () => {
+    onError: (error) => {
+      console.error("=== MATCH CREATION ERROR ===", error);
       toast({
         title: "Error",
         description: "Failed to create match",
@@ -187,10 +191,10 @@ export default function TeamManagement() {
 
   const getTeamStats = (teamId: string) => {
     const teamMatches = matches.filter(
-      (match: any) => match.team1Id === teamId || match.team2Id === teamId
+      (match) => match.team1Id === teamId || match.team2Id === teamId
     );
-    const completedMatches = teamMatches.filter((match: any) => match.status === "completed");
-    const wins = completedMatches.filter((match: any) => match.winner === teamId);
+    const completedMatches = teamMatches.filter((match) => match.status === "completed");
+    const wins = completedMatches.filter((match) => match.winner === teamId);
     
     return {
       matches: completedMatches.length,
@@ -274,11 +278,15 @@ export default function TeamManagement() {
               <Button 
                 size="sm" 
                 className="cricket-green-600 hover:bg-cricket-green-700 touch-feedback"
-                onClick={() => {
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
                   console.log("=== MATCH BUTTON CLICKED IN TEAM MANAGEMENT ===");
                   console.log("Available teams:", teams.length);
                   console.log("Teams data:", teams);
+                  console.log("Current showMatchDialog state:", showMatchDialog);
                   setShowMatchDialog(true);
+                  console.log("Setting showMatchDialog to true");
                 }}
               >
                 <Plus className="w-4 h-4 mr-1" />
@@ -378,6 +386,8 @@ export default function TeamManagement() {
                     type="submit"
                     className="w-full cricket-green-600 hover:bg-cricket-green-700"
                     disabled={createMatchMutation.isPending || teams.length < 2}
+                    onClick={() => console.log("=== CREATE MATCH FORM SUBMIT BUTTON CLICKED ===")}
+                  
                   >
                     {createMatchMutation.isPending ? "Creating..." : "Create Match"}
                   </Button>
