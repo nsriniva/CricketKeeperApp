@@ -32,6 +32,12 @@ const matchFormSchema = insertMatchSchema.extend({
   team2Id: z.string().min(1, "Team 2 is required"),
   format: z.string().min(1, "Format is required"),
   venue: z.string().optional(),
+}).refine((data) => {
+  console.log("=== SCHEMA VALIDATION ===", data);
+  return data.team1Id !== data.team2Id;
+}, {
+  message: "Please select different teams",
+  path: ["team2Id"],
 });
 
 export default function TeamManagement() {
@@ -298,7 +304,10 @@ export default function TeamManagement() {
                 <DialogTitle>Create New Match</DialogTitle>
               </DialogHeader>
               <Form {...matchForm}>
-                <form onSubmit={matchForm.handleSubmit(onCreateMatch)} className="space-y-4">
+                <form onSubmit={matchForm.handleSubmit(onCreateMatch, (errors) => {
+                  console.error("=== FORM VALIDATION ERRORS ===", errors);
+                  console.error("Form state:", matchForm.formState.errors);
+                })} className="space-y-4">
                   <FormField
                     control={matchForm.control}
                     name="team1Id"
