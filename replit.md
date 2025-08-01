@@ -7,6 +7,20 @@ CricketPro is a comprehensive cricket statistics management application built as
 ## Recent Changes
 
 ### August 1, 2025
+- **COMPLETED**: Added "Team Batting First" field to Create Match functionality
+  - Added batting first selection to both Team Management and Match Tracker create match dialogs
+  - Updated form schemas to require batting first selection with proper validation
+  - Updated mutations to store batting and bowling team information in match data
+  - Field dynamically shows selected team names for easy selection
+
+- **COMPLETED**: Implemented automatic data import at app startup
+  - Created auto-import system that checks for existing data and imports default teams if none exist
+  - Includes default cricket teams: Mumbai Indians, Chennai Super Kings, Royal Challengers Bangalore, Kolkata Knight Riders
+  - Auto-import runs on app startup and only imports if database is empty
+  - Added export/import functionality to Team Management page for manual data backup/restore
+  - Users can export current data as JSON file and import data from JSON files
+  - System stores and retrieves data from localStorage for offline functionality
+
 - **COMPLETED**: Fixed all Create Match functionality issues across the application
   - Root cause: Schema validation mismatch between form fields (team1Id/team2Id) and backend schema (team1Name/team2Name required)
   - Solution: Created custom form schema matching form fields, with proper data transformation in mutation

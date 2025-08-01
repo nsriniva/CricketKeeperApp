@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./lib/queryClient";
 import { Toaster } from "@/components/ui/toaster";
@@ -11,9 +11,19 @@ import MatchHistory from "@/pages/match-history";
 import TeamManagement from "@/pages/team-management";
 import MatchTracker from "@/pages/match-tracker";
 import { useLocalStorage } from "@/hooks/use-local-storage";
+import { checkAndImportData } from "@/lib/auto-import";
 
 function App() {
   const [currentTab, setCurrentTab] = useLocalStorage("cricket_app_current_tab", "dashboard");
+
+  useEffect(() => {
+    // Auto-import data on app startup
+    checkAndImportData().then((imported) => {
+      if (imported) {
+        console.log("Initial data imported successfully");
+      }
+    });
+  }, []);
 
   const handleTabChange = (tab: string) => {
     setCurrentTab(tab);

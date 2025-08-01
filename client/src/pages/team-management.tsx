@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Plus, Edit, Users, Trophy, X } from "lucide-react";
+import { Plus, Edit, Users, Trophy, X, Download, Upload } from "lucide-react";
+import { exportCurrentData, saveLocalData, checkAndImportData } from "@/lib/auto-import";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -224,6 +225,72 @@ export default function TeamManagement() {
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-bold text-gray-900">Team Management</h2>
         <div className="flex space-x-2">
+          {/* Export/Import Buttons */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={async () => {
+              try {
+                const data = await exportCurrentData();
+                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `cricket-data-${new Date().toISOString().split('T')[0]}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+                toast({
+                  title: "Success",
+                  description: "Data exported successfully",
+                });
+              } catch (error) {
+                toast({
+                  title: "Error",
+                  description: "Failed to export data",
+                  variant: "destructive",
+                });
+              }
+            }}
+          >
+            <Download className="w-4 h-4 mr-1" />
+            Export
+          </Button>
+          
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              const input = document.createElement('input');
+              input.type = 'file';
+              input.accept = '.json';
+              input.onchange = async (e) => {
+                const file = (e.target as HTMLInputElement).files?.[0];
+                if (file) {
+                  try {
+                    const text = await file.text();
+                    const data = JSON.parse(text);
+                    saveLocalData(data);
+                    // Force a page reload to re-import the new data
+                    window.location.reload();
+                    toast({
+                      title: "Success",
+                      description: "Data imported successfully - page will reload",
+                    });
+                  } catch (error) {
+                    toast({
+                      title: "Error",
+                      description: "Failed to import data. Please check the file format.",
+                      variant: "destructive",
+                    });
+                  }
+                }
+              };
+              input.click();
+            }}
+          >
+            <Upload className="w-4 h-4 mr-1" />
+            Import
+          </Button>
           <Dialog open={showTeamDialog} onOpenChange={setShowTeamDialog}>
             <DialogTrigger asChild>
               <Button size="sm" className="cricket-green-600 hover:bg-cricket-green-700 touch-feedback">
