@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Plus, Edit, Users, Trophy, X, Download, Upload } from "lucide-react";
+import { Plus, Edit, Users, Trophy, X, Download, Upload, Trash2 } from "lucide-react";
 import { exportCurrentData, saveLocalData, clearLocalData, checkAndImportData } from "@/lib/auto-import";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -172,6 +172,51 @@ export default function TeamManagement() {
     },
   });
 
+  const deleteTeamMutation = useMutation({
+    mutationFn: async (teamId: string) => {
+      const response = await apiRequest("DELETE", `/api/teams/${teamId}`);
+      return response;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/teams"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/players"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/matches"] });
+      toast({
+        title: "Success",
+        description: "Team and associated data deleted successfully",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to delete team",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deletePlayerMutation = useMutation({
+    mutationFn: async (playerId: string) => {
+      const response = await apiRequest("DELETE", `/api/players/${playerId}`);
+      return response;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/players"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/teams"] });
+      toast({
+        title: "Success",
+        description: "Player deleted successfully",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to delete player",
+        variant: "destructive",
+      });
+    },
+  });
+
   const onCreateTeam = (data: z.infer<typeof teamFormSchema>) => {
     createTeamMutation.mutate(data);
   };
@@ -190,6 +235,18 @@ export default function TeamManagement() {
       return;
     }
     createMatchMutation.mutate(data);
+  };
+
+  const onDeleteTeam = (teamId: string, teamName: string) => {
+    if (confirm(`Are you sure you want to delete "${teamName}"? This will also delete all associated players and matches.`)) {
+      deleteTeamMutation.mutate(teamId);
+    }
+  };
+
+  const onDeletePlayer = (playerId: string, playerName: string) => {
+    if (confirm(`Are you sure you want to delete player "${playerName}"?`)) {
+      deletePlayerMutation.mutate(playerId);
+    }
   };
 
   const getTeamStats = (teamId: string) => {
@@ -604,6 +661,15 @@ export default function TeamManagement() {
                       <Button size="sm" variant="outline" className="text-cricket-green-600 touch-feedback">
                         <Edit className="w-4 h-4" />
                       </Button>
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        className="text-red-600 hover:text-red-700 hover:border-red-200 touch-feedback"
+                        onClick={() => onDeleteTeam(team.id, team.name)}
+                        disabled={deleteTeamMutation.isPending}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
                     </div>
                   </div>
                   
@@ -629,9 +695,16 @@ export default function TeamManagement() {
                       <div className="text-sm text-gray-500 mb-2">Players</div>
                       <div className="flex flex-wrap gap-2">
                         {teamPlayers.slice(0, 3).map((player) => (
-                          <span key={player.id} className="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded-full">
-                            {player.name}
-                          </span>
+                          <div key={player.id} className="flex items-center bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded-full">
+                            <span>{player.name}</span>
+                            <button
+                              onClick={() => onDeletePlayer(player.id, player.name)}
+                              className="ml-1 text-red-500 hover:text-red-700"
+                              disabled={deletePlayerMutation.isPending}
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
                         ))}
                         {teamPlayers.length > 3 && (
                           <span className="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded-full">

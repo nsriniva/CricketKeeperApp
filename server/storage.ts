@@ -71,6 +71,19 @@ export class MemStorage implements IStorage {
   }
 
   async deleteTeam(id: string): Promise<boolean> {
+    // Delete associated players first
+    const players = await this.getPlayersByTeam(id);
+    for (const player of players) {
+      this.players.delete(player.id);
+    }
+    
+    // Delete associated matches
+    const matches = await this.getMatchesByTeam(id);
+    for (const match of matches) {
+      this.matches.delete(match.id);
+    }
+    
+    // Delete the team
     return this.teams.delete(id);
   }
 
