@@ -13,25 +13,25 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 import type { Match, Team, InsertMatch } from "@shared/schema";
 
 const matchFormSchema = z.object({
-  team1Id: z.string().min(1, "Please select Team 1"),
-  team2Id: z.string().min(1, "Please select Team 2"),
-  format: z.enum(["T20", "ODI", "Test"]),
+  team1Id: z.string().min(1, "Team 1 is required"),
+  team2Id: z.string().min(1, "Team 2 is required"),
+  format: z.string().min(1, "Format is required"),
   venue: z.string().optional(),
-  tossWinner: z.string().optional(),
-  tossDecision: z.enum(["bat", "bowl"]).optional(),
-}).refine(data => data.team1Id !== data.team2Id, {
-  message: "Teams must be different",
+}).refine((data) => data.team1Id !== data.team2Id, {
+  message: "Please select different teams",
   path: ["team2Id"],
 });
 
-type MatchFormData = z.infer<typeof matchFormSchema>;
+
 
 export default function MatchTracker() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [selectedTab, setSelectedTab] = useState("upcoming");
+  const { toast } = useToast();
   
 
 
@@ -43,34 +43,50 @@ export default function MatchTracker() {
     queryKey: ["/api/teams"],
   });
 
-  const form = useForm<MatchFormData>({
+  const form = useForm<z.infer<typeof matchFormSchema>>({
     resolver: zodResolver(matchFormSchema),
     defaultValues: {
       team1Id: "",
       team2Id: "",
-      format: "T20",
+      format: "",
       venue: "",
-      tossWinner: "",
-      tossDecision: "bat",
     },
-    mode: "onChange",
   });
 
   const createMatchMutation = useMutation({
-    mutationFn: async (data: InsertMatch) => {
-      console.log("=== MUTATION EXECUTING ===", data);
-      const response = await apiRequest("POST", "/api/matches", data);
+    mutationFn: async (data: z.infer<typeof matchFormSchema>) => {
+      const team1 = teams.find(t => t.id === data.team1Id);
+      const team2 = teams.find(t => t.id === data.team2Id);
+      
+      const matchData: InsertMatch = {
+        team1Id: data.team1Id,
+        team2Id: data.team2Id,
+        team1Name: team1?.name || "",
+        team2Name: team2?.name || "",
+        format: data.format,
+        venue: data.venue || "",
+        status: "not_started",
+      };
+      
+      const response = await apiRequest("POST", "/api/matches", matchData);
       return response.json();
     },
-    onSuccess: (result) => {
-      console.log("=== MATCH CREATED SUCCESSFULLY ===", result);
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/matches"] });
       setIsCreateOpen(false);
       form.reset();
+      toast({
+        title: "Success",
+        description: "Match created successfully",
+      });
     },
-    onError: (error) => {
-      console.error("=== MATCH CREATION FAILED ===", error);
-    }
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to create match",
+        variant: "destructive",
+      });
+    },
   });
 
   const startMatchMutation = useMutation({
@@ -90,45 +106,16 @@ export default function MatchTracker() {
     },
   });
 
-  const onSubmit = (data: MatchFormData) => {
-    console.log("=== FORM SUBMISSION STARTED ===");
-    console.log("Form submitted with data:", data);
-    console.log("Form is valid:", form.formState.isValid);
-    console.log("Available teams:", teams);
-    
-    const team1 = teams.find(t => t.id === data.team1Id);
-    const team2 = teams.find(t => t.id === data.team2Id);
-    
-    console.log("Found teams:", { team1, team2 });
-    
-    if (!team1 || !team2) {
-      console.error("ERROR: Teams not found!", { 
-        team1Id: data.team1Id, 
-        team2Id: data.team2Id, 
-        availableTeams: teams.map(t => ({ id: t.id, name: t.name }))
+  const onSubmit = (data: z.infer<typeof matchFormSchema>) => {
+    if (data.team1Id === data.team2Id) {
+      toast({
+        title: "Error",
+        description: "Please select different teams",
+        variant: "destructive",
       });
       return;
     }
-
-    if (data.team1Id === data.team2Id) {
-      console.error("ERROR: Same team selected for both teams");
-      return;
-    }
-
-    const matchData: InsertMatch = {
-      team1Id: data.team1Id,
-      team2Id: data.team2Id,
-      team1Name: team1.name,
-      team2Name: team2.name,
-      format: data.format,
-      venue: data.venue || undefined,
-      tossWinner: data.tossWinner || undefined,
-      tossDecision: data.tossDecision || undefined,
-    };
-
-    console.log("Creating match with data:", matchData);
-    console.log("=== CALLING MUTATION ===");
-    createMatchMutation.mutate(matchData);
+    createMatchMutation.mutate(data);
   };
 
   const upcomingMatches = matches.filter(m => m.status === "not_started");
@@ -248,16 +235,125 @@ export default function MatchTracker() {
       {/* Header */}
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-900">Match Tracker</h1>
-        <Button 
-          className="cricket-green-600 hover:bg-cricket-green-700 touch-feedback"
-          onClick={() => {
-            // Navigate to team management for match creation
-            window.location.hash = '#team-management';
-          }}
-        >
-          <Plus className="w-4 h-4 mr-1" />
-          New Match
-        </Button>
+        <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+          <DialogTrigger asChild>
+            <Button className="cricket-green-600 hover:bg-cricket-green-700 touch-feedback">
+              <Plus className="w-4 h-4 mr-1" />
+              New Match
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Create New Match</DialogTitle>
+            </DialogHeader>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="team1Id"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Team 1</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select Team 1" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {teams.map((team) => (
+                            <SelectItem key={team.id} value={team.id}>
+                              {team.name} ({team.shortName})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="team2Id"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Team 2</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select Team 2" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {teams.map((team) => (
+                            <SelectItem key={team.id} value={team.id}>
+                              {team.name} ({team.shortName})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="format"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Format</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select format" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="T20">T20</SelectItem>
+                          <SelectItem value="ODI">ODI</SelectItem>
+                          <SelectItem value="Test">Test</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="venue"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Venue (Optional)</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          placeholder="Enter venue"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <Button
+                  type="submit"
+                  className="w-full cricket-green-600 hover:bg-cricket-green-700"
+                  disabled={createMatchMutation.isPending || teams.length < 2}
+                >
+                  {createMatchMutation.isPending ? "Creating..." : "Create Match"}
+                </Button>
+                {teams.length < 2 && (
+                  <p className="text-sm text-red-600 text-center">
+                    At least 2 teams are required to create a match
+                  </p>
+                )}
+              </form>
+            </Form>
+          </DialogContent>
+        </Dialog>
       </div>
 
       {/* Match Tabs */}
@@ -284,13 +380,125 @@ export default function MatchTracker() {
                 <Clock className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                 <h3 className="font-semibold text-gray-900 mb-2">No Upcoming Matches</h3>
                 <p className="text-gray-500 text-sm mb-4">Create a new match to get started</p>
-                <Button 
-                  onClick={() => setIsCreateOpen(true)}
-                  className="cricket-green-600 hover:bg-cricket-green-700 touch-feedback"
-                >
-                  <Plus className="w-4 h-4 mr-1" />
-                  Create Match
-                </Button>
+                <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+                  <DialogTrigger asChild>
+                    <Button className="cricket-green-600 hover:bg-cricket-green-700 touch-feedback">
+                      <Plus className="w-4 h-4 mr-1" />
+                      Create Match
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Create New Match</DialogTitle>
+                    </DialogHeader>
+                    <Form {...form}>
+                      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                        <FormField
+                          control={form.control}
+                          name="team1Id"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Team 1</FormLabel>
+                              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select Team 1" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  {teams.map((team) => (
+                                    <SelectItem key={team.id} value={team.id}>
+                                      {team.name} ({team.shortName})
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <FormField
+                          control={form.control}
+                          name="team2Id"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Team 2</FormLabel>
+                              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select Team 2" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  {teams.map((team) => (
+                                    <SelectItem key={team.id} value={team.id}>
+                                      {team.name} ({team.shortName})
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="format"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Format</FormLabel>
+                              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select format" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value="T20">T20</SelectItem>
+                                  <SelectItem value="ODI">ODI</SelectItem>
+                                  <SelectItem value="Test">Test</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="venue"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Venue (Optional)</FormLabel>
+                              <FormControl>
+                                <Input
+                                  {...field}
+                                  placeholder="Enter venue"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <Button
+                          type="submit"
+                          className="w-full cricket-green-600 hover:bg-cricket-green-700"
+                          disabled={createMatchMutation.isPending || teams.length < 2}
+                        >
+                          {createMatchMutation.isPending ? "Creating..." : "Create Match"}
+                        </Button>
+                        {teams.length < 2 && (
+                          <p className="text-sm text-red-600 text-center">
+                            At least 2 teams are required to create a match
+                          </p>
+                        )}
+                      </form>
+                    </Form>
+                  </DialogContent>
+                </Dialog>
               </CardContent>
             </Card>
           ) : (
