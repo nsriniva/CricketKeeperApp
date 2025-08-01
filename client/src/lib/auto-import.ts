@@ -17,6 +17,15 @@ export async function checkAndImportData(): Promise<boolean> {
   try {
     // First, always check for local storage data - this takes priority
     const localData = getLocalData();
+    console.log("Local storage check:", localData ? "Found data" : "No data found");
+    
+    if (localData) {
+      console.log("Local storage data details:", {
+        teams: localData.teams?.length || 0,
+        players: localData.players?.length || 0,
+        matches: localData.matches?.length || 0
+      });
+    }
     
     if (localData) {
       console.log("Found local storage data, checking if it needs to be imported...");
@@ -85,7 +94,7 @@ async function isServerDataSameAsLocal(localData: AutoImportData): Promise<boole
     const serverTeamNames = new Set(serverTeams.map((t: any) => t.name));
     const localTeamNames = new Set(localData.teams.map(t => t.name));
     
-    for (const name of localTeamNames) {
+    for (const name of Array.from(localTeamNames)) {
       if (!serverTeamNames.has(name)) {
         return false;
       }
@@ -182,9 +191,60 @@ async function importData(dataToImport: AutoImportData): Promise<void> {
 
 function getLocalData(): AutoImportData | null {
   try {
-    const stored = localStorage.getItem("cricketpro-data");
+    // Use the same key as the Settings import functionality
+    const stored = localStorage.getItem("cricket_app_backup");
+    console.log("Raw localStorage content:", stored ? "Data exists" : "No data");
     if (stored) {
-      return JSON.parse(stored);
+      const parsed = JSON.parse(stored);
+      console.log("Parsed local storage data:", parsed);
+      
+      // Convert from the data-export format to auto-import format
+      if (parsed.teams && parsed.players && parsed.matches) {
+        return {
+          teams: parsed.teams.map((team: any) => ({
+            name: team.name,
+            shortName: team.shortName,
+            players: team.players || [],
+            matches: team.matches || 0,
+            wins: team.wins || 0,
+            losses: team.losses || 0,
+          })),
+          players: parsed.players.map((player: any) => ({
+            name: player.name,
+            role: player.role,
+            teamId: player.teamId,
+            matches: player.matches || 0,
+            runs: player.runs || 0,
+            ballsFaced: player.ballsFaced || 0,
+            fours: player.fours || 0,
+            sixes: player.sixes || 0,
+            fifties: player.fifties || 0,
+            hundreds: player.hundreds || 0,
+            highScore: player.highScore || 0,
+            wickets: player.wickets || 0,
+            ballsBowled: player.ballsBowled || 0,
+            runsConceded: player.runsConceded || 0,
+            maidens: player.maidens || 0,
+            bestBowling: player.bestBowling || "0/0",
+          })),
+          matches: parsed.matches.map((match: any) => ({
+            team1Name: match.team1Name,
+            team2Name: match.team2Name,
+            team1Id: match.team1Id,
+            team2Id: match.team2Id,
+            venue: match.venue,
+            date: match.date,
+            format: match.format,
+            status: match.status || "upcoming",
+            winner: match.winner,
+            team1Score: match.team1Score,
+            team2Score: match.team2Score,
+            battingTeam: match.battingTeam,
+            bowlingTeam: match.bowlingTeam,
+          })),
+        };
+      }
+      return parsed;
     }
   } catch (error) {
     console.error("Failed to parse local data:", error);
@@ -194,7 +254,8 @@ function getLocalData(): AutoImportData | null {
 
 export function saveLocalData(data: AutoImportData): void {
   try {
-    localStorage.setItem("cricketpro-data", JSON.stringify(data));
+    // Use the same key as the Settings import functionality
+    localStorage.setItem("cricket_app_backup", JSON.stringify(data));
     console.log("Data saved to local storage");
   } catch (error) {
     console.error("Failed to save data to local storage:", error);
@@ -203,7 +264,8 @@ export function saveLocalData(data: AutoImportData): void {
 
 export function clearLocalData(): void {
   try {
-    localStorage.removeItem("cricketpro-data");
+    // Use the same key as the Settings import functionality
+    localStorage.removeItem("cricket_app_backup");
     console.log("Local storage data cleared");
   } catch (error) {
     console.error("Failed to clear local storage data:", error);
