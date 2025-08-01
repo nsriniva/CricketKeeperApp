@@ -1,4 +1,4 @@
-import { apiRequest } from "./queryClient";
+import { apiRequest, queryClient } from "./queryClient";
 import type { InsertTeam, InsertPlayer, InsertMatch } from "@shared/schema";
 
 interface AutoImportData {
@@ -37,6 +37,12 @@ export async function checkAndImportData(): Promise<boolean> {
         console.log("Local storage data differs from server, clearing server and importing local data...");
         await clearServerData();
         await importData(localData);
+        
+        // Invalidate all queries to refresh the UI
+        queryClient.invalidateQueries({ queryKey: ["/api/teams"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/players"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/matches"] });
+        
         console.log("Local storage data imported successfully");
         return true;
       } else {

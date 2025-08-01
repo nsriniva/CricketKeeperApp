@@ -17,12 +17,24 @@ function App() {
   const [currentTab, setCurrentTab] = useLocalStorage("cricket_app_current_tab", "dashboard");
 
   useEffect(() => {
-    // Auto-import data on app startup
-    checkAndImportData().then((imported) => {
-      if (imported) {
-        console.log("Initial data imported successfully");
+    const initializeData = async () => {
+      try {
+        const imported = await checkAndImportData();
+        console.log(imported ? "Initial data imported successfully" : "No import needed");
+        
+        // Force a small delay to ensure all API calls complete before UI updates
+        if (imported) {
+          setTimeout(() => {
+            // Additional cache invalidation to ensure UI updates
+            queryClient.invalidateQueries();
+          }, 100);
+        }
+      } catch (error) {
+        console.error("Data initialization failed:", error);
       }
-    });
+    };
+    
+    initializeData();
   }, []);
 
   const handleTabChange = (tab: string) => {
