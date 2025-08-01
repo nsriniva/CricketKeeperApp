@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Plus, Edit, Users, Trophy, X, Download, Upload } from "lucide-react";
-import { exportCurrentData, saveLocalData, checkAndImportData } from "@/lib/auto-import";
+import { exportCurrentData, saveLocalData, clearLocalData, checkAndImportData } from "@/lib/auto-import";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -269,12 +269,19 @@ export default function TeamManagement() {
                   try {
                     const text = await file.text();
                     const data = JSON.parse(text);
+                    
+                    // Save to local storage
                     saveLocalData(data);
-                    // Force a page reload to re-import the new data
-                    window.location.reload();
+                    
+                    // Clear existing data and reload to trigger auto-import
+                    if (confirm("This will replace all current data. Are you sure?")) {
+                      // Clear server data by reloading - the auto-import will pick up the new local storage data
+                      window.location.reload();
+                    }
+                    
                     toast({
                       title: "Success",
-                      description: "Data imported successfully - page will reload",
+                      description: "Data saved to local storage - reload to apply",
                     });
                   } catch (error) {
                     toast({

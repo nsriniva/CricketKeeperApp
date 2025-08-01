@@ -48,7 +48,7 @@ const DEFAULT_DATA: AutoImportData = {
 
 export async function checkAndImportData(): Promise<boolean> {
   try {
-    // Check if data already exists
+    // Check if data already exists in the server
     const [teamsResponse, playersResponse, matchesResponse] = await Promise.all([
       apiRequest("GET", "/api/teams"),
       apiRequest("GET", "/api/players"),
@@ -65,48 +65,58 @@ export async function checkAndImportData(): Promise<boolean> {
       return false;
     }
 
-    // Check for local data in localStorage
+    // Prioritize local storage data over default data
     const localData = getLocalData();
-    const dataToImport = localData || DEFAULT_DATA;
-
-    // Import teams first
-    const createdTeams = [];
-    for (const team of dataToImport.teams) {
-      try {
-        const response = await apiRequest("POST", "/api/teams", team);
-        const createdTeam = await response.json();
-        createdTeams.push(createdTeam);
-        console.log(`Imported team: ${team.name}`);
-      } catch (error) {
-        console.error(`Failed to import team ${team.name}:`, error);
-      }
+    
+    if (localData) {
+      console.log("Found local storage data, importing...");
+      await importData(localData);
+      console.log("Local storage data imported successfully");
+      return true;
+    } else {
+      console.log("No local storage data found, importing default teams...");
+      await importData(DEFAULT_DATA);
+      console.log("Default data imported successfully");
+      return true;
     }
-
-    // Import players with team assignments
-    for (const player of dataToImport.players) {
-      try {
-        await apiRequest("POST", "/api/players", player);
-        console.log(`Imported player: ${player.name}`);
-      } catch (error) {
-        console.error(`Failed to import player ${player.name}:`, error);
-      }
-    }
-
-    // Import matches
-    for (const match of dataToImport.matches) {
-      try {
-        await apiRequest("POST", "/api/matches", match);
-        console.log(`Imported match: ${match.team1Name} vs ${match.team2Name}`);
-      } catch (error) {
-        console.error(`Failed to import match:`, error);
-      }
-    }
-
-    console.log("Auto-import completed successfully");
-    return true;
   } catch (error) {
     console.error("Auto-import failed:", error);
     return false;
+  }
+}
+
+async function importData(dataToImport: AutoImportData): Promise<void> {
+  // Import teams first
+  const createdTeams = [];
+  for (const team of dataToImport.teams) {
+    try {
+      const response = await apiRequest("POST", "/api/teams", team);
+      const createdTeam = await response.json();
+      createdTeams.push(createdTeam);
+      console.log(`Imported team: ${team.name}`);
+    } catch (error) {
+      console.error(`Failed to import team ${team.name}:`, error);
+    }
+  }
+
+  // Import players with team assignments
+  for (const player of dataToImport.players) {
+    try {
+      await apiRequest("POST", "/api/players", player);
+      console.log(`Imported player: ${player.name}`);
+    } catch (error) {
+      console.error(`Failed to import player ${player.name}:`, error);
+    }
+  }
+
+  // Import matches
+  for (const match of dataToImport.matches) {
+    try {
+      await apiRequest("POST", "/api/matches", match);
+      console.log(`Imported match: ${match.team1Name} vs ${match.team2Name}`);
+    } catch (error) {
+      console.error(`Failed to import match:`, error);
+    }
   }
 }
 
@@ -128,6 +138,15 @@ export function saveLocalData(data: AutoImportData): void {
     console.log("Data saved to local storage");
   } catch (error) {
     console.error("Failed to save data to local storage:", error);
+  }
+}
+
+export function clearLocalData(): void {
+  try {
+    localStorage.removeItem("cricketpro-data");
+    console.log("Local storage data cleared");
+  } catch (error) {
+    console.error("Failed to clear local storage data:", error);
   }
 }
 
