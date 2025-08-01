@@ -4,6 +4,15 @@
 
 CricketPro is a comprehensive cricket statistics management application built as a Progressive Web App (PWA) with a full-stack architecture. The application provides functionality for managing cricket teams, players, matches, and live scoring with offline capabilities and a mobile-first design approach.
 
+## Recent Changes
+
+### August 1, 2025
+- **RESOLVED**: Fixed critical Create Match functionality issue
+  - Root cause: Schema validation mismatch between form fields (team1Id/team2Id) and backend schema (team1Name/team2Name required)
+  - Solution: Created custom form schema matching form fields, with proper data transformation in mutation
+  - Status: Create Match dialog now works correctly in Team Management component
+  - Location: Team Management page contains the working Create Match functionality (not Match Tracker)
+
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.

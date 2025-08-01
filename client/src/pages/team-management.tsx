@@ -32,10 +32,7 @@ const matchFormSchema = z.object({
   team2Id: z.string().min(1, "Team 2 is required"),
   format: z.string().min(1, "Format is required"),
   venue: z.string().optional(),
-}).refine((data) => {
-  console.log("=== SCHEMA VALIDATION ===", data);
-  return data.team1Id !== data.team2Id;
-}, {
+}).refine((data) => data.team1Id !== data.team2Id, {
   message: "Please select different teams",
   path: ["team2Id"],
 });
@@ -45,8 +42,7 @@ export default function TeamManagement() {
   const [showPlayerDialog, setShowPlayerDialog] = useState(false);
   const [showMatchDialog, setShowMatchDialog] = useState(false);
   
-  // Debug logging
-  console.log("=== TEAM MANAGEMENT COMPONENT LOADED ===");
+
   const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
   const { toast } = useToast();
 
@@ -137,7 +133,6 @@ export default function TeamManagement() {
 
   const createMatchMutation = useMutation({
     mutationFn: async (data: z.infer<typeof matchFormSchema>) => {
-      console.log("=== MUTATION STARTING ===", data);
       const team1 = teams.find(t => t.id === data.team1Id);
       const team2 = teams.find(t => t.id === data.team2Id);
       
@@ -151,12 +146,10 @@ export default function TeamManagement() {
         status: "not_started",
       };
       
-      console.log("=== SENDING MATCH DATA ===", matchData);
       const response = await apiRequest("POST", "/api/matches", matchData);
       return response.json();
     },
-    onSuccess: (result) => {
-      console.log("=== MATCH CREATED SUCCESS ===", result);
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/matches"] });
       setShowMatchDialog(false);
       matchForm.reset();
@@ -165,8 +158,7 @@ export default function TeamManagement() {
         description: "Match created successfully",
       });
     },
-    onError: (error) => {
-      console.error("=== MATCH CREATION ERROR ===", error);
+    onError: () => {
       toast({
         title: "Error",
         description: "Failed to create match",
@@ -184,9 +176,7 @@ export default function TeamManagement() {
   };
 
   const onCreateMatch = (data: z.infer<typeof matchFormSchema>) => {
-    console.log("=== FORM SUBMITTED ===", data);
     if (data.team1Id === data.team2Id) {
-      console.log("=== SAME TEAM SELECTED ERROR ===");
       toast({
         title: "Error",
         description: "Please select different teams",
@@ -194,7 +184,6 @@ export default function TeamManagement() {
       });
       return;
     }
-    console.log("=== CALLING MUTATION ===");
     createMatchMutation.mutate(data);
   };
 
@@ -287,16 +276,7 @@ export default function TeamManagement() {
               <Button 
                 size="sm" 
                 className="cricket-green-600 hover:bg-cricket-green-700 touch-feedback"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  console.log("=== MATCH BUTTON CLICKED IN TEAM MANAGEMENT ===");
-                  console.log("Available teams:", teams.length);
-                  console.log("Teams data:", teams);
-                  console.log("Current showMatchDialog state:", showMatchDialog);
-                  setShowMatchDialog(true);
-                  console.log("Setting showMatchDialog to true");
-                }}
+
               >
                 <Plus className="w-4 h-4 mr-1" />
                 Match
@@ -307,10 +287,7 @@ export default function TeamManagement() {
                 <DialogTitle>Create New Match</DialogTitle>
               </DialogHeader>
               <Form {...matchForm}>
-                <form onSubmit={matchForm.handleSubmit(onCreateMatch, (errors) => {
-                  console.error("=== FORM VALIDATION ERRORS ===", errors);
-                  console.error("Form state:", matchForm.formState.errors);
-                })} className="space-y-4">
+                <form onSubmit={matchForm.handleSubmit(onCreateMatch)} className="space-y-4">
                   <FormField
                     control={matchForm.control}
                     name="team1Id"
@@ -398,7 +375,6 @@ export default function TeamManagement() {
                     type="submit"
                     className="w-full cricket-green-600 hover:bg-cricket-green-700"
                     disabled={createMatchMutation.isPending || teams.length < 2}
-                    onClick={() => console.log("=== CREATE MATCH FORM SUBMIT BUTTON CLICKED ===")}
                   
                   >
                     {createMatchMutation.isPending ? "Creating..." : "Create Match"}
