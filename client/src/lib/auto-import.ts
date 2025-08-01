@@ -48,7 +48,28 @@ const DEFAULT_DATA: AutoImportData = {
 
 export async function checkAndImportData(): Promise<boolean> {
   try {
-    // Check if data already exists in the server
+    // First, always check for local storage data - this takes priority
+    const localData = getLocalData();
+    
+    if (localData) {
+      console.log("Found local storage data, checking if it needs to be imported...");
+      
+      // Check if server data matches local storage data
+      const serverDataMatches = await isServerDataSameAsLocal(localData);
+      
+      if (!serverDataMatches) {
+        console.log("Local storage data differs from server, clearing server and importing local data...");
+        await clearServerData();
+        await importData(localData);
+        console.log("Local storage data imported successfully");
+        return true;
+      } else {
+        console.log("Server data matches local storage, no import needed");
+        return false;
+      }
+    }
+
+    // No local storage data, check if server has any data
     const [teamsResponse, playersResponse, matchesResponse] = await Promise.all([
       apiRequest("GET", "/api/teams"),
       apiRequest("GET", "/api/players"),
@@ -59,29 +80,103 @@ export async function checkAndImportData(): Promise<boolean> {
     const players = await playersResponse.json();
     const matches = await matchesResponse.json();
 
-    // If we already have data, don't import
+    // If we already have data, don't import defaults
     if (teams.length > 0 || players.length > 0 || matches.length > 0) {
-      console.log("Data already exists, skipping auto-import");
+      console.log("Server has data and no local storage override, keeping existing data");
       return false;
     }
 
-    // Prioritize local storage data over default data
-    const localData = getLocalData();
-    
-    if (localData) {
-      console.log("Found local storage data, importing...");
-      await importData(localData);
-      console.log("Local storage data imported successfully");
-      return true;
-    } else {
-      console.log("No local storage data found, importing default teams...");
-      await importData(DEFAULT_DATA);
-      console.log("Default data imported successfully");
-      return true;
-    }
+    // No data anywhere, import defaults
+    console.log("No data found anywhere, importing default teams...");
+    await importData(DEFAULT_DATA);
+    console.log("Default data imported successfully");
+    return true;
   } catch (error) {
     console.error("Auto-import failed:", error);
     return false;
+  }
+}
+
+async function isServerDataSameAsLocal(localData: AutoImportData): Promise<boolean> {
+  try {
+    const [teamsResponse, playersResponse, matchesResponse] = await Promise.all([
+      apiRequest("GET", "/api/teams"),
+      apiRequest("GET", "/api/players"),
+      apiRequest("GET", "/api/matches"),
+    ]);
+
+    const serverTeams = await teamsResponse.json();
+    const serverPlayers = await playersResponse.json();
+    const serverMatches = await matchesResponse.json();
+
+    // Simple comparison - if counts differ, data is different
+    if (serverTeams.length !== localData.teams.length ||
+        serverPlayers.length !== localData.players.length ||
+        serverMatches.length !== localData.matches.length) {
+      return false;
+    }
+
+    // Check if team names match (basic comparison)
+    const serverTeamNames = new Set(serverTeams.map((t: any) => t.name));
+    const localTeamNames = new Set(localData.teams.map(t => t.name));
+    
+    for (const name of localTeamNames) {
+      if (!serverTeamNames.has(name)) {
+        return false;
+      }
+    }
+
+    return true;
+  } catch (error) {
+    console.error("Error comparing server and local data:", error);
+    return false;
+  }
+}
+
+async function clearServerData(): Promise<void> {
+  try {
+    // Get all data first
+    const [teamsResponse, playersResponse, matchesResponse] = await Promise.all([
+      apiRequest("GET", "/api/teams"),
+      apiRequest("GET", "/api/players"),
+      apiRequest("GET", "/api/matches"),
+    ]);
+
+    const teams = await teamsResponse.json();
+    const players = await playersResponse.json();
+    const matches = await matchesResponse.json();
+
+    // Delete all matches first
+    for (const match of matches) {
+      try {
+        await apiRequest("DELETE", `/api/matches/${match.id}`);
+      } catch (error) {
+        console.error(`Failed to delete match ${match.id}:`, error);
+      }
+    }
+
+    // Delete all players
+    for (const player of players) {
+      try {
+        await apiRequest("DELETE", `/api/players/${player.id}`);
+      } catch (error) {
+        console.error(`Failed to delete player ${player.id}:`, error);
+      }
+    }
+
+    // Delete all teams
+    for (const team of teams) {
+      try {
+        await apiRequest("DELETE", `/api/teams/${team.id}`);
+      } catch (error) {
+        console.error(`Failed to delete team ${team.id}:`, error);
+      }
+    }
+
+    console.log("Server data cleared successfully");
+  } catch (error) {
+    console.error("Failed to clear server data:", error);
+    throw error;
   }
 }
 
