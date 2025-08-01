@@ -21,6 +21,7 @@ const matchFormSchema = z.object({
   team2Id: z.string().min(1, "Team 2 is required"),
   format: z.string().min(1, "Format is required"),
   venue: z.string().optional(),
+  battingFirst: z.string().min(1, "Please select which team bats first"),
 }).refine((data) => data.team1Id !== data.team2Id, {
   message: "Please select different teams",
   path: ["team2Id"],
@@ -50,6 +51,7 @@ export default function MatchTracker() {
       team2Id: "",
       format: "",
       venue: "",
+      battingFirst: "",
     },
   });
 
@@ -66,6 +68,8 @@ export default function MatchTracker() {
         format: data.format,
         venue: data.venue || "",
         status: "not_started",
+        battingTeam: data.battingFirst,
+        bowlingTeam: data.battingFirst === data.team1Id ? data.team2Id : data.team1Id,
       };
       
       const response = await apiRequest("POST", "/api/matches", matchData);
@@ -338,6 +342,36 @@ export default function MatchTracker() {
                   )}
                 />
 
+                <FormField
+                  control={form.control}
+                  name="battingFirst"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Team Batting First</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select team to bat first" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {form.watch("team1Id") && (
+                            <SelectItem value={form.watch("team1Id")}>
+                              {teams.find(t => t.id === form.watch("team1Id"))?.name || "Team 1"}
+                            </SelectItem>
+                          )}
+                          {form.watch("team2Id") && (
+                            <SelectItem value={form.watch("team2Id")}>
+                              {teams.find(t => t.id === form.watch("team2Id"))?.name || "Team 2"}
+                            </SelectItem>
+                          )}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
                 <Button
                   type="submit"
                   className="w-full cricket-green-600 hover:bg-cricket-green-700"
@@ -478,6 +512,36 @@ export default function MatchTracker() {
                                   placeholder="Enter venue"
                                 />
                               </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="battingFirst"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Team Batting First</FormLabel>
+                              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select team to bat first" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  {form.watch("team1Id") && (
+                                    <SelectItem value={form.watch("team1Id")}>
+                                      {teams.find(t => t.id === form.watch("team1Id"))?.name || "Team 1"}
+                                    </SelectItem>
+                                  )}
+                                  {form.watch("team2Id") && (
+                                    <SelectItem value={form.watch("team2Id")}>
+                                      {teams.find(t => t.id === form.watch("team2Id"))?.name || "Team 2"}
+                                    </SelectItem>
+                                  )}
+                                </SelectContent>
+                              </Select>
                               <FormMessage />
                             </FormItem>
                           )}
