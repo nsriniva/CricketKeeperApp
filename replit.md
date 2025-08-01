@@ -13,14 +13,14 @@ CricketPro is a comprehensive cricket statistics management application built as
   - Updated mutations to store batting and bowling team information in match data
   - Field dynamically shows selected team names for easy selection
 
-- **COMPLETED**: Fixed automatic data import to truly prioritize local storage over any existing data
+- **COMPLETED**: Removed default teams - app starts completely empty and only imports from local storage
   - ✅ Auto-import system now always checks local storage first, regardless of server state
   - ✅ If local storage data exists and differs from server, clears server and imports local data
   - ✅ Compares local vs server data using team count and names to detect differences
-  - ✅ Falls back to default cricket teams only if no local storage data exists and server is empty
+  - ✅ App starts with completely empty state if no local storage data exists
   - ✅ System ensures user's custom data from local storage always takes priority
   - ✅ Automatic clearing and re-importing when local storage data is detected
-  - ✅ Data persistence across app sessions with proper synchronization
+  - ✅ No default teams loaded - clean slate approach for user's custom data
 
 - **COMPLETED**: Fixed all Create Match functionality issues across the application
   - Root cause: Schema validation mismatch between form fields (team1Id/team2Id) and backend schema (team1Name/team2Name required)

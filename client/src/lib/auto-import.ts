@@ -8,40 +8,7 @@ interface AutoImportData {
 }
 
 const DEFAULT_DATA: AutoImportData = {
-  teams: [
-    {
-      name: "Mumbai Indians",
-      shortName: "MI",
-      players: [],
-      matches: 0,
-      wins: 0,
-      losses: 0,
-    },
-    {
-      name: "Chennai Super Kings",
-      shortName: "CSK",
-      players: [],
-      matches: 0,
-      wins: 0,
-      losses: 0,
-    },
-    {
-      name: "Royal Challengers Bangalore",
-      shortName: "RCB",
-      players: [],
-      matches: 0,
-      wins: 0,
-      losses: 0,
-    },
-    {
-      name: "Kolkata Knight Riders",
-      shortName: "KKR",
-      players: [],
-      matches: 0,
-      wins: 0,
-      losses: 0,
-    },
-  ],
+  teams: [],
   players: [],
   matches: [],
 };
@@ -86,11 +53,9 @@ export async function checkAndImportData(): Promise<boolean> {
       return false;
     }
 
-    // No data anywhere, import defaults
-    console.log("No data found anywhere, importing default teams...");
-    await importData(DEFAULT_DATA);
-    console.log("Default data imported successfully");
-    return true;
+    // No data anywhere, start with empty state
+    console.log("No data found anywhere, starting with empty state");
+    return false;
   } catch (error) {
     console.error("Auto-import failed:", error);
     return false;
